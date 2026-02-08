@@ -11,6 +11,8 @@ from app.config.env_config import get_settings
 from app.utils.constants import messages, origins
 from app.config.supabase import supabase, engine
 from sqlmodel import text, Session
+from app.utils.exceptions import APIException
+from app.utils.error_handler import global_exception_handler
 
 
 is_production = get_settings().ENVIRONMENT != 'development'
@@ -60,7 +62,7 @@ async def rate_limit_check(request: Request):
     result = await ratelimit.limit(identifier)
 
     if not result.allowed:
-        raise HTTPException(status_code=429, detail="Too many requests, Slow down!")
+        raise APIException(status_code=429, message="Too many requests, Slow down!")
     return result
 
 
@@ -141,3 +143,6 @@ async def health_check(request: Request):
         response = "503_SERVICE_UNAVAILABLE"
 
     return health_status
+
+app.add_exception_handler(APIException, global_exception_handler)
+app.add_exception_handler(Exception, global_exception_handler)
