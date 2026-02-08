@@ -8,3 +8,5 @@ redis
 celery
 upstash-redis
 upstash-ratelimit
+sqlacodegen
+psycopg2-binary
