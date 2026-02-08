@@ -3,3 +3,8 @@ sqlmodel
 python-dotenv
 supabase
 pydantic-settings
+boto3
+redis
+celery
+upstash-redis
+upstash-ratelimit
