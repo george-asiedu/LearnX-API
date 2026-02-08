@@ -9,18 +9,37 @@ from upstash_redis.asyncio import Redis
 from app.config.log import log
 from app.config.env_config import get_settings
 from app.utils.constants import messages, origins
-from app.config.supabase import supabase
+from app.config.supabase import supabase, engine
+from sqlmodel import text, Session
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("Starting up LearnX server...")
 
+    # 1. Check Database Connection
     try:
-        yield
-        await redis.close()
-    finally:
-        log.info("Shutting down the server...")
+        # We use the engine directly, not a session, for a connectivity check
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        log.info("✅ Database (PostgreSQL) is connected.")
+    except Exception as e:
+        log.error(f"❌ Database connection failed: {e}")
+        raise e
+
+    # 2. Check Supabase API
+    try:
+        # Simple check to Supabase if we can form a query, even if empty
+        supabase.table("profiles").select("count", count="exact").limit(1).execute()
+        log.info("✅ Supabase is reachable.")
+    except Exception as e:
+        log.error(f"❌ Supabase check failed: {e}")
+
+    yield
+
+    log.info("Shutting down the server...")
+    await redis.close()
+    engine.dispose()
 
 
 redis = Redis(
@@ -60,6 +79,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def db_session_middleware(request: Request, call_next):
+    #Create a session for this specific request
+    with Session(engine) as session:
+        #Attach it to the request state
+        request.state.db = session
+        request.state.supabase = supabase
+
+        #Proceed to the next middleware or actual request handler
+        response = await call_next(request)
+
+    #Session automatically closes here when "with" block ends
+    return response
 
 @app.get("/")
 def get_welcome_message():
