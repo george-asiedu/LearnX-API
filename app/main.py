@@ -13,6 +13,8 @@ from app.config.supabase import supabase, engine
 from sqlmodel import text, Session
 
 
+is_production = get_settings().ENVIRONMENT != 'development'
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("Starting up LearnX server...")
@@ -67,7 +69,10 @@ app = FastAPI(
     description=messages["app_description"],
     version=messages["app_version"],
     lifespan=lifespan,
-    dependencies=[Depends(rate_limit_check)]
+    dependencies=[Depends(rate_limit_check)],
+    docs_url=None if is_production else "/docs",
+    redoc_url=None if is_production else "/redoc",
+    openapi_url=None if is_production else "/openapi.json"
 )
 
 
@@ -93,7 +98,7 @@ async def db_session_middleware(request: Request, call_next):
     #Session automatically closes here when "with" block ends
     return response
 
-@app.get("/")
+@app.get("/", tags=["Welcome"])
 def get_welcome_message():
     return {"message": messages["welcome_message"]}
 
