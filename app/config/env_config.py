@@ -5,7 +5,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     ENVIRONMENT: str = 'development'
     SUPABASE_URL: str
-    SUPABASE_URL: str
+    SUPABASE_KEY: str
     JWT_KEY: str
     S3_ACCESS_KEY: str
     S3_SECRET_KEY: str
