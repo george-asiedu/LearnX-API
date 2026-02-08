@@ -4,6 +4,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     ENVIRONMENT: str = 'development'
+    DATABASE_URL: str
     SUPABASE_URL: str
     SUPABASE_KEY: str
     JWT_KEY: str
